@@ -1,0 +1,853 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Docker Without Docker</title>
+    <meta charset='utf-8'>
+    <script src='static/slides.js'></script>
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-42886409-1', 'auto');
+        ga('send', 'pageview');
+
+    </script>
+  </head>
+
+  <body style='display: none'>
+
+    <section class='slides layout-widescreen'>
+      
+      <article>
+        <h1>Docker Without Docker</h1>
+        <h3>Recurse Center</h3>
+        <h3>16 April 2015</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Aditya Mukerjee
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+          </div>
+        
+      </article>
+      
+  
+  
+      <article>
+      
+        <h3></h3>
+        
+<div class="image">
+  <img src="88x31.png">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Some common questions</h3>
+        
+  <ul>
+  
+    <li>What is Docker? Do I really need it?</li>
+  
+    <li>How does Docker actually work?</li>
+  
+    <li>How can I set up a single dev environment to work on any computer?</li>
+  
+    <li>My code works on my computer. Now how do I put it on a production server?</li>
+  
+    <li>Can&#39;t I just write code and have it &#34;just work&#34; everywhere?</li>
+  
+    <li>Package managers suck. What&#39;s a better way?</li>
+  
+    <li>Can I make my virtual machine run faster?</li>
+  
+    <li>Is it possible to run Docker containers without even running Docker?</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Wouldn&#39;t it be nice if</h3>
+        
+  <ul>
+  
+    <li>We could use <code>git</code> to manage an entire server or desktop?</li>
+  
+    <li>We could provision/deprovision an entire machine with a single command?</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Why not virtualize</h3>
+        
+  <ul>
+  
+    <li>Performance</li>
+  
+    <li>Interoperability (inter-communication)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>What is an operating system (&#34;distro&#34;)?</h3>
+        
+  <ul>
+  
+    <li>At its core, your OS is just a bunch of files </li>
+  
+    <li>Along with an <code>/sbin/init</code> file</li>
+  
+    <li>Different distributions distribute different files</li>
+  
+  </ul>
+
+  
+  <p>
+    That&#39;s basically it.
+  </p>
+  
+
+<div class="image">
+  <img src="rootdir.png">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inspecting processes</h3>
+        
+<div class="image">
+  <img src="psauxinit.png">
+</div>
+
+<div class="image">
+  <img src="pstreeinit.png">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>But what&#39;s actually in /sbin/init?</h3>
+        
+  <ul>
+  
+    <li>There is <b>nothing particularly special</b> about what goes here!</li>
+  
+    <li>...But it&#39;s almost always the same thing</li>
+  
+    <li><code>sysvinit</code> (1983 - ~2010)</li>
+  
+    <li><code>systemd</code> (2010 - ?)</li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Within 9 days, all of the top 10 Linux distributions will use systemd by default, or descend from one that does.</b>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>What tools does systemd provide?</h3>
+        
+  <ul>
+  
+    <li><code>systemctl</code> (system management, daemonization, etc.)</li>
+  
+    <li><code>journactl</code> (logging)</li>
+  
+    <li><code>systemd-analyze</code> (system profiling)</li>
+  
+    <li><code>machinectl</code> (machine management)</li>
+  
+  </ul>
+
+  
+  <p>
+    These are all <b>already</b> available on any machine using systemd
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>How do you create a distribution from scratch?</h3>
+        
+  
+  <p>
+    0. Create a directory that represents the new root directory (ie, &#34;/&#34;)
+<br>
+
+    1. Move all the right files there, either manually, or with a tool like deboostrap, pacstrap, yum, etc.)
+<br>
+
+    2) Tar your directory and ship it
+  </p>
+  
+
+  
+  <p>
+    Congratulations! This directory is a pseudo-snapshot of your new distro!
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Where does Docker come in?</h3>
+        
+  <ul>
+  
+    <li>Docker can also create these &#39;snapshots&#39;, using a <code>Dockerfile</code></li>
+  
+  </ul>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="1">FROM debian:wheezy</span>
+<span num="2">MAINTAINER Aditya Mukerjee &lt;dev@chimeracoder.net&gt;</span>
+<span num="3"></span>
+<span num="4">RUN apt-get update</span>
+<span num="5">RUN apt-get install -y procps psmisc</span>
+<span num="6">CMD [&#34;/bin/bash&#34;]</span>
+</pre>
+
+
+</div>
+
+  
+  <p>
+    Build and run:
+  </p>
+  
+
+  
+  <div class="code"><pre>$ docker build -t bashtest .
+$ docker run -it bashtest</pre></div>
+  
+
+  
+  <p>
+    (like Git, containers have hashes, and you can use the hash or a prefix instead of the name)
+  </p>
+  
+
+  <ul>
+  
+    <li>Question: What runs as PID 1?</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Dissecting the Dockerfile</h3>
+        
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="1">FROM debian:wheezy</span>
+<span num="2">MAINTAINER Aditya Mukerjee &lt;dev@chimeracoder.net&gt;</span>
+<span num="3"></span>
+<span num="4">RUN apt-get update</span>
+<span num="5">RUN apt-get install -y procps psmisc</span>
+<span num="6">CMD [&#34;/bin/bash&#34;]</span>
+</pre>
+
+
+</div>
+
+  
+  <div class="code"><pre>$ docker ps 
+$ docker exec &lt;container&gt; ps aux</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Can I access this &#39;snapshot&#39;?</h3>
+        
+  <ul>
+  
+    <li>Yes!</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>$ docker export &lt;container-hash&gt; &gt; img.tar</pre></div>
+  
+
+  
+  <p>
+    Let&#39;s inspect that:
+  </p>
+  
+
+  
+  <div class="code"><pre>$ mkdir ~/bashtestcontainer
+$ tar -C ~/bashtestcontainer -xvf img.tar</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>What&#39;s inside the tarfile?</h3>
+        
+<div class="image">
+  <img src="dockerimagetarcontents.png">
+</div>
+
+  
+  <p>
+    Does this look familiar?
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Can I do this without Docker?</h3>
+        
+  <ul>
+  
+    <li>Yes!</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>$ mkdir debian-tree
+$ debootstrap --arch=amd64 unstable debian-tree</pre></div>
+  
+
+<div class="image">
+  <img src="debiantreecontents.png">
+</div>
+
+  
+  <p>
+    Does <b>this</b> look familiar?
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>How do we run the Debian image, though?</h3>
+        
+  <ul>
+  
+    <li>The <b>systemd-nspawn</b> command runs a command or OS in a lightweight namespace container</li>
+  
+    <li><i>&#34;In many ways it is similar to chroot(1), but more powerful since it fully virtualizes the file system hierarchy, as well as the process tree, the various IPC subsystems and the host and domain name.&#34;</i></li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Let&#39;s try this out</h3>
+        
+  
+  <div class="code"><pre>$ systemd-nspawn -D debian-tree/ /bin/echo &#34;hello, outside world!&#34;
+$ systemd-nspawn -D debian-tree/ /bin/bash 
+$ systemd-nspawn -D debian-tree/ /sbin/init</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>We can manage our containers with machinectl</h3>
+        
+  
+  <div class="code"><pre>$ machinectl list
+$ machinectl status debian-tree
+$ machinectl reboot debian-tree
+$ machinectl poweroff debian-tree</pre></div>
+  
+
+  
+  <p>
+    Note that these are analogous to 
+  </p>
+  
+
+  
+  <div class="code"><pre>$ systemctl reboot
+$ systemctl poweroff</pre></div>
+  
+
+  
+  <p>
+    which we use for managing our systemd (host) servers
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>But all this has to be on our local machine, right?</h3>
+        
+  <ul>
+  
+    <li>Nope.</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>$ machinectl -H foo@example.com
+$ machinectl -H foo@example.com:debian-tree</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h2>Daemons, services, and units</h2>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Daemonizing, the old way:</h3>
+        
+  <ul>
+  
+    <li>Write a shell script</li>
+  
+    <li>Implementing each target</li>
+  
+    <li>Which executes sequentially with others</li>
+  
+    <li>Make sure your program remembers to fork twice, not just once!</li>
+  
+    <li>Oh, but hopefully it didn&#39;t call setuid</li>
+  
+    <li>Which file is the PID written in again?</li>
+  
+    <li>But wait, did the PID get reused?</li>
+  
+  </ul>
+
+  
+  <p>
+    All in all, it requires <a href="http://www.netzmafia.de/skripten/unix/linux-daemon-howto.html" target="_blank">fifteen different steps</a>, with serious consequences for even small mistakes
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Really?</h3>
+        
+  <ul>
+  
+    <li>Yes, and that&#39;s just for one daemon.</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Also, &#34;Process monitoring? What&#39;s that?&#34;</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Daemonizing, the new way:</h3>
+        
+  <ul>
+  
+    <li>Write a single <code>.service</code> file for your program. </li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>[Service]
+ExecStart=/usr/bin/foobard
+
+[Install]
+WantedBy=multi-user.target</pre></div>
+  
+
+  
+  <p>
+    No fork. No pain.
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Daemonizing containers</h3>
+        
+  
+  <div class="code"><pre>$ mv ~/debian-tree /var/lib/container/debian-tree
+$ systemctl start systemd-nspawn@debian-tree.service    # start now
+$ systemctl enable systemd-nspawn@debian-tree.service   # autostart on boot</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>How do we get logs?</h3>
+        
+  <ul>
+  
+    <li>Easy. On the host, we normally view logs by executing:</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>$ journalctl</pre></div>
+  
+
+  <ul>
+  
+    <li>If we have a container running on the host, we can do:</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>$ journalctl -M debian-tree</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>What about profiling?</h3>
+        
+  
+  <p>
+    Same thing.
+  </p>
+  
+
+  
+  <div class="code"><pre>$ systemd-analyze -M debian-tree       # list startup time
+$ systemd-analyze blame -M debian-tree # break down the boot time per-unit</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h2>But what about networking?</h2>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Networking just works</h3>
+        
+  <ul>
+  
+    <li>The defaults are probably what you want</li>
+  
+    <li>But you can also configure specific network interfaces, network bridges, <code>macvlan</code>, and more</li>
+  
+    <li>Docker doesn&#39;t let you do this (...or so a lot of people <b>think</b>!)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>How can I control resources for a container?</h3>
+        
+  
+  <div class="code"><pre>$ systemd-cgroup</pre></div>
+  
+
+  
+  <p>
+    <b>cgroups</b> (control groups) are a kernel feature for managing resources for a single process or collection of processes, such as:
+  </p>
+  
+
+  <ul>
+  
+    <li>Limiting memory/CPU usage</li>
+  
+    <li>Limiting I/O access</li>
+  
+    <li>Prioritizing important tasks over others</li>
+  
+    <li>etc.</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Is this all specific to systemd, or can I use Docker?</h3>
+        
+<div class="image">
+  <img src="porquenolosdos.png">
+</div>
+
+  
+  <div class="code"><pre>$ systemd-nspawn --machine bashtest --directory ~/bashtestcontainer /bin/bash</pre></div>
+  
+
+  
+  <p>
+    or even:
+  </p>
+  
+
+  
+  <div class="code"><pre>$ machinectl pull-dkr chimeracoder/nginx-nspawn --dkr-index-url https://index.docker.io</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Wait.</h3>
+        
+  
+  <p>
+    <i>what?!</i>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3> Remember what we said at the beginning</h3>
+        
+  <ul>
+  
+    <li><i>At its core, your OS is just a bunch of files</i></li>
+  
+    <li><i>Along with an</i> /sbin/init <i>file</i></li>
+  
+    <li><i>Different distributions distribute different files</i></li>
+  
+    <li><i>That&#39;s basically it.</i></li>
+  
+  </ul>
+
+  
+  <p>
+    Containers let you virtualize <b>parts</b> of your OS, without requiring you to virtualize the <b>whole</b> OS.
+  </p>
+  
+
+  
+  <p>
+    Containers let you virtualize the filesystem, the process tree, the network stack,`/proc`, <code>/sys</code>, and more <b>selectively</b>.
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>So why use Docker at all?</h3>
+        
+  <ul>
+  
+    <li>For many use cases, it may not matter one way or the other</li>
+  
+    <li>Docker is not the only containerization tool around, but it is probably the most popular</li>
+  
+    <li>Docker has a healthy ecosystem (the container equivalent of &#34;package support&#34;)</li>
+  
+    <li>Try it yourself both ways. As you can see, it&#39;s easy to switch back and forth</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Try it yourself!</h3>
+        
+  
+  <p>
+    Some cool things you can do with systemd-nspawn:
+  </p>
+  
+
+  <ul>
+  
+    <li>&#34;Execute this command on my root filesystem, but roll back any changes at the end&#34;</li>
+  
+    <li>&#34;Run nginx inside its own container on boot, but limit it to 512 MB of RAM and 200% CPU&#34;</li>
+  
+    <li>&#34;Give me a container that has its own private network and its own IP and MAC addresses, but map certain ports on the host to the container&#34;</li>
+  
+    <li>&#34;Run this container with its own daemons in it, and monitor them to make sure they don&#39;t fail&#34;</li>
+  
+    <li>&#34;Download this container from the Docker Hub and run it every time I boot, but without installing Docker&#34;</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+
+      <article>
+        <h3>Thank you</h1>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Aditya Mukerjee
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            <p class="link"><a href="http://www.adityamukerjee.net" target="_blank">http://www.adityamukerjee.net</a></p><p class="link"><a href="http://twitter.com/chimeracoder" target="_blank">@chimeracoder</a></p>
+          </div>
+        
+      </article>
+
+  </body>
+  
+</html>
